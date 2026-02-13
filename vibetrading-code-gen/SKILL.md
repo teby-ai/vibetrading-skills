@@ -6,7 +6,8 @@ metadata:
     "openclaw":
       {
         "emoji": "🤖",
-        "requires": { "bins": ["python3"] }
+        "requires": { "bins": ["python3"] },
+        "min_python_version": "3.6"
       }
   }
 ---
@@ -522,6 +523,134 @@ This skill will be updated with:
 - Additional risk management features
 - Integration with more data sources
 
+## Backtesting Integration
+
+### Backtest Evaluation Feature
+
+After generating a strategy, you can now evaluate its performance using our integrated backtesting system:
+
+```bash
+# Generate a strategy
+python scripts/strategy_generator.py "BTC grid trading 50000-60000 10 grids 0.01 BTC per grid"
+
+# Run backtest on the generated strategy
+python scripts/backtest_runner.py generated_strategies/btc_grid_trading_strategy.py
+
+# Run backtest with custom parameters
+python scripts/backtest_runner.py generated_strategies/btc_grid_trading_strategy.py \
+  --start-date 2025-01-01 \
+  --end-date 2025-03-01 \
+  --initial-balance 10000 \
+  --interval 1h
+```
+
+### Backtest Features
+
+The backtesting system provides:
+
+1. **Historical Data Simulation** - Uses historical price data for realistic testing
+2. **Performance Metrics** - Calculates key metrics:
+   - Total Return (%)
+   - Maximum Drawdown (%)
+   - Sharpe Ratio
+   - Win Rate (%)
+   - Total Trades
+   - Average Trade Duration
+
+3. **Risk Analysis** - Evaluates strategy risk characteristics
+4. **Visual Reports** - Generates charts and performance reports
+5. **Comparative Analysis** - Compares strategy performance against benchmarks
+
+### Backtest Configuration
+
+You can configure backtests with these parameters:
+
+```python
+BACKTEST_CONFIG = {
+    "start_date": "2025-01-01",
+    "end_date": "2025-03-01",
+    "initial_balance": 10000,  # USDC
+    "interval": "1h",  # 1m, 5m, 15m, 30m, 1h, 4h, 1d
+    "symbols": ["BTC", "ETH"],  # Trading symbols
+    "commission_rate": 0.001,  # 0.1% trading commission
+    "slippage": 0.001,  # 0.1% slippage
+}
+```
+
+### Backtest Results Example
+
+```
+📊 Backtest Results for BTC Grid Trading Strategy
+================================================
+📅 Period: 2025-01-01 to 2025-03-01 (60 days)
+💰 Initial Balance: $10,000.00
+💰 Final Balance: $11,234.56
+
+📈 Performance Metrics:
+  • Total Return: +12.35%
+  • Max Drawdown: -5.67%
+  • Sharpe Ratio: 1.45
+  • Win Rate: 58.3%
+  • Total Trades: 120
+  • Avg Trade Duration: 12.5 hours
+
+📋 Trade Analysis:
+  • Winning Trades: 70
+  • Losing Trades: 50
+  • Largest Win: +$245.67
+  • Largest Loss: -$123.45
+  • Avg Win: +$89.12
+  • Avg Loss: -$56.78
+
+⚠️ Risk Assessment:
+  • Risk-Adjusted Return: Good
+  • Drawdown Control: Acceptable
+  • Consistency: Moderate
+```
+
+### Backtest Integration in Generated Code
+
+Generated strategies now include backtest compatibility:
+
+```python
+# Generated strategy includes backtest method
+strategy = GridTradingStrategy(api_key, account_address, config)
+
+# Run backtest
+backtest_results = strategy.run_backtest(
+    start_date="2025-01-01",
+    end_date="2025-03-01",
+    initial_balance=10000
+)
+
+# Generate backtest report
+strategy.generate_backtest_report(backtest_results)
+```
+
+### Backtest Data Sources
+
+The backtesting system uses:
+- **Historical price data** from Hyperliquid API
+- **Realistic order execution** with configurable slippage
+- **Accurate commission modeling** based on exchange fees
+- **Market impact simulation** for large orders
+
+### Backtest Limitations
+
+**Important Notes**:
+1. **Past performance ≠ future results** - Historical success doesn't guarantee future profits
+2. **Data quality** - Results depend on historical data accuracy
+3. **Market conditions** - Past market conditions may differ from future
+4. **Execution assumptions** - Assumes perfect order execution (configurable slippage)
+5. **Liquidity assumptions** - Assumes sufficient market liquidity
+
+**Best Practices**:
+1. Always backtest with multiple time periods
+2. Test different market conditions (bull, bear, sideways)
+3. Use realistic commission and slippage settings
+4. Start with small position sizes in live trading
+5. Monitor strategy performance and adjust as needed
+
 ## Code Validation Disclaimer
 
 **Validation Limitations**: While the code validation system automatically fixes common issues, it cannot guarantee:
@@ -534,7 +663,7 @@ This skill will be updated with:
 **Validation Success Criteria**: Code is considered "valid" when:
 1. No syntax errors
 2. All imports are resolvable
-3. Python 3.5+ compatible
+3. Python 3.6+ compatible
 4. Basic structure is correct
 
 **Not Validated**:
@@ -543,6 +672,31 @@ This skill will be updated with:
 - Financial calculations
 - Market condition handling
 - Performance optimization
+
+## Quick Reference
+
+### Python Version Requirements
+```bash
+# Check Python version
+python scripts/check_python_version.py
+
+# Minimum: Python 3.6+ (for f-string support)
+```
+
+### Basic Usage
+```bash
+# Generate strategy
+python scripts/strategy_generator.py "BTC grid trading 50000-60000 10 grids"
+
+# Run backtest
+python scripts/backtest_runner.py generated_strategies/btc_grid_trading_strategy.py
+```
+
+### Key Features
+1. **Python 3.6+ Compatibility** - Modern Python features including f-strings
+2. **Automatic Backtest Integration** - Evaluate strategies before live trading
+3. **Comprehensive Validation** - Syntax and compatibility checking
+4. **Risk Management** - Built-in risk controls in all strategies
 
 ## Trading Disclaimer
 
@@ -556,3 +710,10 @@ The code generator provides tools for strategy creation, but ultimate responsibi
 3. **Security audit** - Check for vulnerabilities before deployment
 4. **Performance testing** - Test under various market conditions
 5. **Risk assessment** - Evaluate strategy risks independently
+
+**Backtesting Limitations**:
+1. **Historical data quality** - Results depend on data accuracy
+2. **Market condition changes** - Past conditions may differ from future
+3. **Execution assumptions** - Assumes perfect order execution
+4. **Liquidity assumptions** - Assumes sufficient market liquidity
+5. **No guarantee of future performance** - Past success ≠ future profits

@@ -21,6 +21,7 @@ import time
 import logging
 import json
 from datetime import datetime
+from pathlib import Path
 
 
 # Add api_wrappers to path
@@ -75,10 +76,10 @@ class GridTradingStrategy:
         self.client = None
         self._init_api_client()
         
-        self.logger.info("Initialized {} grid trading strategy".format(self.symbol))
-        self.logger.info("Price range: ${:.4f} - ${:.4f}".format(self.lower_bound, self.upper_bound))
-        self.logger.info("Grid count: {}".format(self.grid_count))
-        self.logger.info("Grid size: {}".format(self.grid_size))
+        self.logger.info(f"Initialized {self.symbol} grid trading strategy")
+        self.logger.info(f"Price range: ${self.lower_bound:.4f} - ${self.upper_bound:.4f}")
+        self.logger.info(f"Grid count: {self.grid_count}")
+        self.logger.info(f"Grid size: {self.grid_size}")
     
     def _setup_logging(self):
         """Setup logging configuration"""
@@ -116,7 +117,7 @@ class GridTradingStrategy:
                     raise Exception("API health check failed")
                     
             except Exception as e:
-                self.logger.error("Failed to initialize API client: {}".format(e))
+                self.logger.error(f"Failed to initialize API client: {e}")
                 raise
         else:
             self.logger.error("API client not available")
@@ -130,12 +131,12 @@ class GridTradingStrategy:
         price_step = (self.upper_bound - self.lower_bound) / (self.grid_count - 1)
         grid_prices = [self.lower_bound + i * price_step for i in range(self.grid_count)]
         
-        self.logger.info("Calculated grid prices: {}".format(grid_prices))
+        self.logger.info(f"Calculated grid prices: {grid_prices}")
         return grid_prices
     
     def place_grid_orders(self):
         """Place grid orders at calculated price levels"""
-        self.logger.info("Placing {} grid orders...".format(self.symbol))
+        self.logger.info(f"Placing {self.symbol} grid orders...")
         
         # Cancel existing orders first
         self.cancel_all_orders()

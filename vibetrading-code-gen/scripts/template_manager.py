@@ -6,6 +6,7 @@ Template Manager - Manages strategy templates and selects appropriate ones.
 
 import os
 import json
+from pathlib import Path
 
 
 class TemplateManager:
@@ -38,7 +39,7 @@ class TemplateManager:
                     
                     templates[template_name] = {
                         'name': template_name,
-                        'path'(template_path),
+                        'path': str(template_path),
                         'content': content,
                         'metadata': metadata,
                         'category': Path(root).relative_to(self.templates_dir).parts[0] if Path(root) != self.templates_dir else 'root'

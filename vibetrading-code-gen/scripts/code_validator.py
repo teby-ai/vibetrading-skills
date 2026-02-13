@@ -60,15 +60,14 @@ class CodeValidator:
         errors = []
         warnings = []
         
-        # Check for f-strings (Python 3.5 incompatible)
-        if '"' in content or "'" in content:
-            warnings.append("Found f-strings (may cause issues in Python 3.5)")
+        # Check for Python version compatibility (now supports 3.6+)
+        # Note: f-strings are now allowed for Python 3.6+
         
         # Check for type annotations without imports
         type_annotations = re.findall(r'->\s*(\w+\[.*?\]|\w+)', content)
         for annotation in type_annotations:
             if annotation.startswith('List') or annotation.startswith('Dict') or annotation.startswith('Optional'):
-                if '
+                if 'from typing import' not in content and 'import typing' not in content:
                     errors.append("Type annotation '{}' found but typing module not imported".format(annotation))
         
         # Check for missing encoding declaration
@@ -227,10 +226,13 @@ except Exception as e:
                     break
             content = '\n'.join(lines)
         
-        # Fix 4: Replace f-strings with format()
-        # This is complex, so we'll just warn about it
+        # Fix 4: Check Python version compatibility
+        # Note: f-strings are now allowed for Python 3.6+
+        # We'll check for Python 3.5 incompatible features
         if '"' in content or "'" in content:
-            changes.append("Warning: f-strings found (manual fix required for Python 3.5)")
+            # f-strings are now allowed for Python 3.6+
+            # Just log that we found them
+            changes.append("Found f-strings (Python 3.6+ compatible)")
         
         # Write back if changes were made
         if content != original_content:

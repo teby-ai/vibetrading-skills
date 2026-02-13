@@ -8,6 +8,7 @@ import os
 import re
 import json
 from datetime import datetime
+from pathlib import Path
 
 
 
@@ -18,7 +19,7 @@ class CodeFormatter:
         """Initialize code formatter."""
         pass
     
-    def generate(self, template, strategy_info, output_dir):
+    def generate(self, template, strategy_info, output_dir, session_id=None):
         """
         Generate complete strategy files from template.
         
@@ -26,6 +27,7 @@ class CodeFormatter:
             template: Template dictionary
             strategy_info: Strategy information from prompt parser
             output_dir: Output directory for generated files
+            session_id: Optional session ID for organizing files
             
         Returns:
             List of generated file information dictionaries
@@ -39,12 +41,17 @@ class CodeFormatter:
         # Generate strategy name
         strategy_name = self._generate_strategy_name(strategy_info)
         
+        # Add session info to strategy info
+        if session_id:
+            strategy_info['session_id'] = session_id
+        
         # 1. Generate main strategy file
         strategy_file = self._generate_strategy_file(
             template=template,
             strategy_info=strategy_info,
             strategy_name=strategy_name,
-            output_dir=output_path
+            output_dir=output_path,
+            session_id=session_id
         )
         generated_files.append(strategy_file)
         
@@ -52,13 +59,15 @@ class CodeFormatter:
         config_file = self._generate_config_file(
             strategy_info=strategy_info,
             strategy_name=strategy_name,
-            output_dir=output_path
+            output_dir=output_path,
+            session_id=session_id
         )
         generated_files.append(config_file)
         
         # 3. Generate requirements file
         requirements_file = self._generate_requirements_file(
-            output_dir=output_path
+            output_dir=output_path,
+            session_id=session_id
         )
         generated_files.append(requirements_file)
         
@@ -66,7 +75,8 @@ class CodeFormatter:
         instructions_file = self._generate_instructions_file(
             strategy_info=strategy_info,
             strategy_name=strategy_name,
-            output_dir=output_path
+            output_dir=output_path,
+            session_id=session_id
         )
         generated_files.append(instructions_file)
         
@@ -130,13 +140,13 @@ class CodeFormatter:
                 for i, line in enumerate(lines):
                     if line.startswith('import ') or line.startswith('from '):
                         # Add typing import after other imports
-                        lines.insert(i + 1, '
+                        lines.insert(i + 1, 'from typing import List, Dict, Optional')
                         imports_added = True
                         break
                 
                 if not imports_added:
                     # Add at the beginning
-                    lines.insert(0, '
+                    lines.insert(0, 'from typing import List, Dict, Optional')
                 
                 # Write back
                 with open(filepath, 'w') as f:
@@ -206,7 +216,8 @@ class CodeFormatter:
         return "{symbol}_{strategy_type_clean}_{timestamp}"
     
     def _generate_strategy_file(self, template, strategy_info, 
-                               strategy_name, output_dir: Path):
+                               strategy_name, output_dir: Path, 
+                               session_id=None):
         """Generate main strategy Python file."""
         # Get template content
         template_content = template.get('content', '')
@@ -215,15 +226,16 @@ class CodeFormatter:
         formatted_content = self._replace_template_variables(
             content=template_content,
             strategy_info=strategy_info,
-            strategy_name=strategy_name
+            strategy_name=strategy_name,
+            session_id=session_id
         )
         
         # Add header comment
-        header = self._generate_file_header(strategy_info, strategy_name)
+        header = self._generate_file_header(strategy_info, strategy_name, session_id)
         formatted_content = header + formatted_content
         
         # Write to file
-        filename = "{strategy_name}.py"
+        filename = f"{strategy_name}.py"
         filepath = output_dir / filename
         
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -233,27 +245,31 @@ class CodeFormatter:
         os.chmod(filepath, 0o755)
         
         return {
-            'path'(filepath),
+            'path': str(filepath),
             'type': 'strategy',
             'description': '主策略Python文件'
         }
     
     def _replace_template_variables(self, content, strategy_info, 
-                                   strategy_name):
+                                   strategy_name, session_id=None):
         """Replace template variables with actual values."""
         # Basic replacements
         replacements = {
-            '{{STRATEGY_NAME}}'ategy_name,
-            '{{SYMBOL}}'ategy_info.get('symbol', 'HYPE'),
-            '{{STRATEGY_TYPE}}'ategy_info.get('type', 'grid_trading'),
+            '{{STRATEGY_NAME}}': strategy_name,
+            '{{SYMBOL}}': strategy_info.get('symbol', 'HYPE'),
+            '{{STRATEGY_TYPE}}': strategy_info.get('type', 'grid_trading'),
             '{{TIMESTAMP}}': datetime.now().isoformat(),
             '{{GENERATOR}}': 'VibeTrading Code Generator'
         }
         
+        # Add session ID if provided
+        if session_id:
+            replacements['{{SESSION_ID}}'] = session_id
+        
         # Add parameter replacements
         parameters = strategy_info.get('parameters', {})
         for key, value in parameters.items():
-            placeholder = '{{{{{key.upper()}}}}}'
+            placeholder = f'{{{{{key.upper()}}}}}'
             if isinstance(value, (list, tuple)):
                 replacements[placeholder] = str(value)
             else:
@@ -274,13 +290,13 @@ class CodeFormatter:
         """Create configuration dictionary from strategy info."""
         config = {
             'strategy': {
-                'name'ategy_info.get('name', '未命名策略'),
-                'type'ategy_info.get('type', 'basic'),
-                'symbol'ategy_info.get('symbol', 'HYPE'),
+                'name': strategy_info.get('name', '未命名策略'),
+                'type': strategy_info.get('type', 'basic'),
+                'symbol': strategy_info.get('symbol', 'HYPE'),
                 'generated_at': datetime.now().isoformat()
             },
-            'parameters'ategy_info.get('parameters', {}),
-            'risk_management'ategy_info.get('risk_preferences', {
+            'parameters': strategy_info.get('parameters', {}),
+            'risk_management': strategy_info.get('risk_preferences', {
                 'stop_loss': 0.05,
                 'take_profit': 0.10,
                 'position_size': 0.01,
@@ -299,7 +315,7 @@ class CodeFormatter:
         
         return config
     
-    def _generate_file_header(self, strategy_info, strategy_name):
+    def _generate_file_header(self, strategy_info, strategy_name, session_id=None):
         """Generate file header comment."""
         symbol = strategy_info.get('symbol', 'HYPE')
         strategy_type = strategy_info.get('type', 'grid_trading')
@@ -309,13 +325,20 @@ class CodeFormatter:
             '#!/usr/bin/env python3',
             '# -*- coding: utf-8 -*-',
             '"""',
-            '{} {} Strategy'.format(symbol.upper(), strategy_type.replace('_', ' ').title()),
+            f'{symbol.upper()} {strategy_type.replace("_", " ").title()} Strategy',
             'Generated by VibeTrading Code Generator',
             '',
-            '策略名称: {}'.format(strategy_name),
-            '交易品种: {}'.format(symbol),
-            '策略类型: {}'.format(strategy_type),
-            '生成时间: {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+            f'策略名称: {strategy_name}',
+            f'交易品种: {symbol}',
+            f'策略类型: {strategy_type}',
+            f'生成时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+        ]
+        
+        # Add session ID if provided
+        if session_id:
+            header_lines.append(f'Session ID: {session_id}')
+        
+        header_lines.extend([
             '',
             '策略描述:',
             self._generate_strategy_description(strategy_info),
@@ -332,10 +355,9 @@ class CodeFormatter:
             '过去表现不代表未来结果。请谨慎交易。',
             '"""',
             ''
-        ]
+        ])
         
         return '\n'.join(header_lines)
-        return header
     
     def _generate_strategy_description(self, strategy_info):
         """Generate strategy description from strategy info."""
@@ -375,23 +397,30 @@ class CodeFormatter:
         return description
     
     def _generate_config_file(self, strategy_info, strategy_name, 
-                             output_dir: Path):
+                             output_dir: Path, session_id=None):
         """Generate configuration JSON file."""
         config_dict = self._create_config_dict(strategy_info)
         
-        filename = "{strategy_name}_config.json"
+        # Add session info to config
+        if session_id:
+            config_dict['session'] = {
+                'id': session_id,
+                'created_at': datetime.now().isoformat()
+            }
+        
+        filename = f"{strategy_name}_config.json"
         filepath = output_dir / filename
         
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(config_dict, f, indent=2, ensure_ascii=False)
         
         return {
-            'path'(filepath),
+            'path': str(filepath),
             'type': 'config',
             'description': '策略配置文件 (JSON格式)'
         }
     
-    def _generate_requirements_file(self, output_dir: Path):
+    def _generate_requirements_file(self, output_dir: Path, session_id=None):
         """Generate requirements.txt file."""
         # Use template requirements file
         template_path = Path(__file__).parent.parent / "config_templates" / "requirements.txt"
@@ -414,6 +443,10 @@ numpy>=1.24.0
 # python-telegram-bot>=20.0  # For Telegram notifications
 """
         
+        # Add session info comment
+        if session_id:
+            requirements = f"# Session ID: {session_id}\n# Generated: {datetime.now().isoformat()}\n\n" + requirements
+        
         filename = "requirements.txt"
         filepath = output_dir / filename
         
@@ -421,25 +454,30 @@ numpy>=1.24.0
             f.write(requirements)
         
         return {
-            'path'(filepath),
+            'path': str(filepath),
             'type': 'requirements',
             'description': 'Python依赖包列表'
         }
     
     def _generate_instructions_file(self, strategy_info, strategy_name,
-                                   output_dir: Path):
+                                   output_dir: Path, session_id=None):
         """Generate usage instructions file."""
         symbol = strategy_info.get('symbol', 'HYPE')
         strategy_type = strategy_info.get('type', 'grid_trading')
         
-        instructions = '''# {symbol.upper()} {strategy_type.replace('_', ' ').title()} Strategy
+        # Build instructions with session info
+        session_info = ""
+        if session_id:
+            session_info = f"- **Session ID**: {session_id}\n"
+        
+        instructions = f'''# {symbol.upper()} {strategy_type.replace('_', ' ').title()} Strategy
 # 使用说明
 
 ## 策略信息
 - **策略名称**: {strategy_name}
 - **交易品种**: {symbol}
 - **策略类型**: {strategy_type}
-- **生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+{session_info}- **生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 ## 快速开始
 
@@ -477,6 +515,10 @@ python {strategy_name}.py --config {strategy_name}_config.json
 - 检查 logs/ 目录下的日志文件
 - 查看 status/ 目录下的状态文件
 - 设置Telegram通知（如配置）
+
+## Session目录结构
+
+{session_id and f"本策略属于Session: `{session_id}`\n\n文件组织:\n```\nsessions/{session_id}/\n├── strategies/     # 策略文件 (当前目录)\n├── backtest_results/ # 回测结果\n├── logs/          # 日志文件\n└── configs/       # 配置文件\n```\n" or ""}
 
 ## 配置文件说明
 
@@ -524,9 +566,9 @@ python {strategy_name}.py --config {strategy_name}_config.json
 - 考虑市场流动性
 
 ### 日志文件
-- 主日志: `logs/grid_trading_{symbol}_*.log`
+{session_id and f"- 主日志: `sessions/{session_id}/logs/grid_trading_{{symbol}}_*.log`" or "- 主日志: `logs/grid_trading_{symbol}_*.log`"}
 - 错误日志: 查看Python异常输出
-- 状态文件: `status/grid_status_{symbol}.json`
+{session_id and f"- 回测结果: `sessions/{session_id}/backtest_results/`" or "- 回测结果: `backtest_results/`"}
 
 ## 高级功能
 
@@ -575,14 +617,14 @@ python {strategy_name}.py --config {strategy_name}_config.json
 *最后更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
 '''
         
-        filename = "{strategy_name}_instructions.md"
+        filename = f"{strategy_name}_instructions.md"
         filepath = output_dir / filename
         
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(instructions)
         
         return {
-            'path'(filepath),
+            'path': str(filepath),
             'type': 'instructions',
             'description': '详细的使用说明文档'
         }
