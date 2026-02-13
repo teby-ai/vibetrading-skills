@@ -8,19 +8,27 @@
 vibetrading-code-gen/
 ├── SKILL.md                    # 技能说明文档
 ├── README.md                   # 本文件
+├── api_wrappers/               # API封装层
+│   └── hyperliquid_api.py      # Hyperliquid API包装器
 ├── scripts/                    # 核心脚本
-│   ├── strategy_generator.py   # 策略生成器
+│   ├── strategy_generator_with_prices.py  # 主生成器（带价格集成）
+│   ├── price_fetcher.py        # 价格查询工具
 │   ├── template_manager.py     # 模板管理
 │   ├── prompt_parser.py        # 提示解析器
 │   ├── code_formatter.py       # 代码格式化
-│   └── code_validator.py       # 代码验证器
+│   ├── code_validator.py       # 代码验证器
+│   ├── backtest_runner.py      # 回测运行器
+│   └── check_python_version.py # 版本检查
 ├── templates/                  # 策略模板
 │   └── grid_trading.py         # 网格交易模板
+├── examples/                   # 示例代码
+│   ├── grid_trading_example.py # 网格交易示例
+│   ├── rsi_strategy_example.py # RSI策略示例
+│   ├── configs/                # 示例配置
+│   └── README.md               # 示例说明
 ├── generated_strategies/       # 生成的策略（用户文件）
 │   └── HYPE_grid_strategy_20260213_153606/  # 示例策略
 ├── backtest_engine/            # 回测引擎
-├── config_templates/           # 配置模板
-├── examples/                   # 示例代码
 ├── data/                       # 数据目录
 ├── logs/                       # 日志目录（自动创建）
 ├── sessions/                   # 会话目录（自动创建）
@@ -29,10 +37,25 @@ vibetrading-code-gen/
 
 ## 🚀 快速开始
 
-### 生成策略
+### 查看示例策略
 ```bash
-# 生成HYPE网格交易策略
-python scripts/strategy_generator.py "Generate HYPE grid trading strategy, price range 28-34 USDC, 10 grids, 10 HYPE per grid"
+# 运行网格交易示例
+python examples/grid_trading_example.py
+
+# 运行RSI策略示例
+python examples/rsi_strategy_example.py
+```
+
+### 查询价格数据
+```bash
+# 查询HYPE和BTC的当前价格
+python scripts/price_fetcher.py --symbols HYPE BTC --report
+```
+
+### 生成策略（带价格集成）
+```bash
+# 自动查询价格并生成策略
+python scripts/strategy_generator_with_prices.py "Generate HYPE grid trading strategy with 10 grids"
 ```
 
 ### 查看生成的策略
